@@ -1,0 +1,10 @@
+
+configparser==3.3.0.post2
+
+Markdown==2.6.6
+
+PyMySQL==0.7.9
+
+tornado==4.4.1
+
+savReaderWriter == 3.4.2
