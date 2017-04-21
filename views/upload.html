@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+    <input type="file" id="file" />
+    <input type="button"  value="提交" onclick="UploadFile();" />
+    <script src="/static/jquery-1.12.4.js"></script>
+    <script>
+        function UploadFile(){
+            var fileObj = $("#file")[0].files[0];
+            var form = new FormData();//创建一个form对象类似<form>
+            form.append("user_id", "12");
+            form.append("project_name", "abcde");
+            form.append("file", fileObj);
+
+            $.ajax({
+                type:'POST',
+                url: '/upload',
+                data: form,
+                processData: false,  // tell jQuery not to process the data
+                contentType: false,  // tell jQuery not to set contentType
+                                             //如果不写这两句，改变里面的格式，影响内容
+                success: function(arg){
+                    console.log(arg);
+                }
+            })
+        }
+    </script>
+</body>
+</html>

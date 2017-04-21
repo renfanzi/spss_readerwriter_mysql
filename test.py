@@ -3,6 +3,8 @@
 
 import json, pickle
 import datetime, time
+from common.base import Config
+import requests
 #
 # def valuelables_decode(unicode_dict):
 #     if isinstance(unicode_dict, dict):
@@ -119,5 +121,5 @@ if __name__ == '__main__':
 
 """
 
-
-
+aaa = requests.post("http://127.0.0.1:8001/writer_spss_mysql", data={"filename":1})
+print(aaa)

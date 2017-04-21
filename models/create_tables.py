@@ -2,13 +2,16 @@
 # -*- coding:utf-8 -*-
 # import MySQLdb
 import json
+import datetime
 from common.base import Config, My_Pymysql
-from common.log.loger import my_log
+from common.base import my_log
 from models.base import base_model
 
 
-def create_data_table(vartypes, width, valuetypes, formats, varnames, filename, libname="data"):
-    sql = """CREATE TABLE `{}` (""".format(filename)
+def create_data_table(vartypes, width, valuetypes, formats, varnames, filename, tablename, libname="data"):
+
+    print("tablename is :", tablename)
+    sql = """CREATE TABLE `{}` (""".format(tablename)
     for i in range(len(varnames)):
         if valuetypes[i] == "FLOAT":
             num = width[i].split(".")
@@ -65,25 +68,59 @@ def create_information_tables(tablename, libname="information"):
 
 
 class writer_information_tables():
-    def __init__(self, libname="information"):
+    def __init__(self, libname="user_information"):
         self.libname= libname
         self.res = base_model(libname).connect()
 
     def insert_sql(self, tablename, data):
         data = tuple(data)
-        sql = "insert INTO `{}` VALUES {}".format(tablename, data)
+        sql = "insert INTO `data_information` VALUES {};".format(data)
         self.res.adu_sql(sql)
 
     def close(self):
         self.res.close()
 
 
+class insert_project_infor():
+    def __init__(self, libname="user_information"):
+        self.libname= libname
+        self.res = base_model(libname).connect()
+        # user_table, proj_table, dataset_table, datainfor_table
+        self.table = Config().get_content("user_proj")
+
+    # 插入 project表的信息
+    def insert_project(self, user_id, proj_name):
+        # proj_id, user_id, proj_name
+        sql, value = "insert INTO project SET user_id=%s, proj_name=%s", ( user_id, proj_name)
+        lastrowid = self.res.insert_sql(sql, value)
+        return lastrowid
+
+    # project_id
+    def select_project_id(self, user_id, proj_name):
+        # proj_id, user_id, proj_name
+        sql = "select proj_id from `project` where user_id={} and proj_name='{}';".format(user_id, proj_name)
+        project_id = self.res.select_sql(sql)
+        return project_id
+
+    # 插入 dataset表的信息
+    def insert_dataset(self, dataset_id, proj_id, dataset_name, datatable_name, origin_filepath, origin_filetype):
+        # dataset_id, proj_id, dataset_name, datatable_name, origin_filepath, origin_filetype
+        sql = "insert INTO `dataset` SET dataset_id={}, proj_id={}, dataset_name='{}', datatable_name='{}', origin_filepath='{}', origin_filetype='{}';".format(
+            dataset_id, proj_id, dataset_name, datatable_name, origin_filepath, origin_filetype)
+        self.res.adu_sql(sql)
+
+    # project_id
+    def select_dataset_id(self, proj_id):
+        # proj_id, user_id, proj_name
+        sql = "select dataset_id from `dataset` where proj_id={}".format(proj_id)
+        project_id = self.res.select_sql(sql)
+        return project_id
+
+    def close(self):
+        self.res.close()
 
 if __name__ == '__main__':
-    # ret = create_tables()
-
-    # res = writer_tables()
-    # res.conn()
-    # res.run_sql("222", ['hrYjT71474436254', '2016-09-21 13:37:34'])
-    # res.close()
-    pass
+    ret = insert_project_infor()
+    res = ret.select_project_id(12, 'abcde')
+    print(res)
+    ret.close()

@@ -2,17 +2,12 @@
 # -*- coding:utf-8 -*-
 
 import json
-import datetime
-import pickle
 import savReaderWriter
-from common.base import MongoDb, Config
-import time, os
-from collections import OrderedDict
-import pymysql
-from common.log.loger import my_log
-from common.base import my_datetime
+import os
+from common.base import my_log
 from models.create_tables import create_data_table, writer_data_table
 from models.create_tables import create_information_tables, writer_information_tables
+from models.create_tables import insert_project_infor
 
 vartypes = []  # ['A20', 'F8.2', 'F8', 'DATETIME20'] spss类型
 width = []  # ['20', '8.2', '8', '20'] 宽度
@@ -30,24 +25,6 @@ def read_sav(filepath):
         """
         return read.formats, read.varNames, read.varLabels, read.valueLabels
 
-
-# 写入数据到数据库
-def writer_data(filepath, filename, valuetypes):
-    res = writer_data_table()
-    with savReaderWriter.SavReader(filepath, ioUtf8=True) as read:
-        # 如果不用ioutf8， 汉字十六进制\被转义，更麻烦
-        for i in read:
-            for j in range(len(valuetypes)):
-                # 数据库不认unicode所以要转换下
-                # 将varchar进行json存如数据库
-                if valuetypes[j] == "DATETIME":
-                    i[j] = read.spss2strDate(i[j], '%Y-%m-%d %H:%M:%S', None)
-                elif valuetypes[j] == "DATE":
-                    i[j] = read.spss2strDate(i[j], '%Y-%m-%d', None)
-                elif valuetypes[j] == "VARCHAR":
-                    i[j] = i[j]
-            res.insert_sql(filename, i)
-    res.close()
 
 # 获取spss需要的一些数据
 def get_spss_data(formats, varnames):
@@ -89,22 +66,62 @@ def float_data(width):
     return float_width
 
 
-# 判断是字典还是字符串, 进行decode
-def valuelables_decode(unicode_dict):
-    if isinstance(unicode_dict, dict):
-        for i in unicode_dict:
-            unicode_dict[i] = unicode_dict[i].decode('utf-8')
-        return unicode_dict
-    elif isinstance(unicode_dict, str):
-        return unicode_dict.decode('utf-8')
+# 写入数据到数据库
+def writer_data(filepath, tablename, valuetypes):
+    res = writer_data_table()
+    with savReaderWriter.SavReader(os.path.join(filepath, tablename), ioUtf8=True) as read:
+        # 如果不用ioutf8， 汉字十六进制\被转义，更麻烦
+        try:
+            for i in read:
+                for j in range(len(valuetypes)):
+                    # 数据库不认unicode所以要转换下
+                    # 将varchar进行json存如数据库
+                    if valuetypes[j] == "DATETIME":
+                        i[j] = read.spss2strDate(i[j], '%Y-%m-%d %H:%M:%S', None)
+                    elif valuetypes[j] == "DATE":
+                        i[j] = read.spss2strDate(i[j], '%Y-%m-%d', None)
+                    elif valuetypes[j] == "VARCHAR":
+                        i[j] = i[j]
+                res.insert_sql(tablename, i)
+        except Exception as e:
+            my_log.error(e)
+        finally:
+            my_log.info("data write database success !!!")
+    res.close()
 
+
+
+def writer_moredata(filepath, tablename, valuetypes, start, end):
+    res = writer_data_table()
+    with savReaderWriter.SavReader(os.path.join(filepath, tablename), ioUtf8=True) as read:
+        # 如果不用ioutf8， 汉字十六进制\被转义，更麻烦
+        try:
+            for i in read:
+                i = i[start:end]
+                for j in range(len(valuetypes)):
+                    # 数据库不认unicode所以要转换下
+                    # 将varchar进行json存如数据库
+                    if valuetypes[j] == "DATETIME":
+                        i[j] = read.spss2strDate(i[j], '%Y-%m-%d %H:%M:%S', None)
+                    elif valuetypes[j] == "DATE":
+                        i[j] = read.spss2strDate(i[j], '%Y-%m-%d', None)
+                    elif valuetypes[j] == "VARCHAR":
+                        i[j] = i[j]
+                res.insert_sql(tablename, i)
+        except Exception as e:
+            my_log.error(e)
+        finally:
+            my_log.info("data write database success !!!")
+    res.close()
 
 # 插入信息表的数据
-def insert_sub_table(filename, varnames, valuetypes, width, float_width, varLabels, valueLabels, vartypes):
+def insert_sub_table(filename, varnames, valuetypes, width, float_width, varLabels, valueLabels, vartypes, project_id, dataset_id):
     res = writer_information_tables()
 
     for i in range(len(varnames)):
         data = []
+        data.append(project_id)
+        data.append(dataset_id)
         data.append(varnames[i])
         data.append(valuetypes[i])
         data.append(width[i])
@@ -120,11 +137,11 @@ def insert_sub_table(filename, varnames, valuetypes, width, float_width, varLabe
         data.append("")
         data.append("")
         # sql = res.insert_sql(filename, data)
-        res.insert_sql(filename, data)
+        res.insert_sql("data_information", data)
     res.close()
 
 
-def main(filename):
+def main(filepath, filename, user_id, project_name):
 
     """
     # print(formats):{'Q8': 'A400', 'Q3R6': 'F5', 'Q5R3': 'F5', }
@@ -137,13 +154,11 @@ def main(filename):
     # print(float_width)[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     """
 
-    filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "file", filename)
+    # filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "file", filename)
+    FilePathName = os.path.join(filepath, filename)
+    print("filepath: ",FilePathName)
     # 得到文件信息
-    formats, varnames, varLabels, valueLabels = read_sav(filepath)
-    #不允许超过1024列MySQL
-    if len(varnames) > 1024:
-        return 4001
-
+    formats, varnames, varLabels, valueLabels = read_sav(FilePathName)
     my_vartypes, my_width, my_valuetypes = get_spss_data(formats, varnames)
     float_width = float_data(width)
     for i in range(len(my_vartypes)):
@@ -153,14 +168,55 @@ def main(filename):
             else:
                 my_vartypes[i] = my_vartypes[i] + ".0"
 
+    insert_project = insert_project_infor()
+    # project表
+    project_id = insert_project.select_project_id(user_id, project_name)[-1]["proj_id"]
+    if not project_id:
+        project_id = insert_project.insert_project(user_id, project_name)
+
+    #先查dataset的id,然后在插入
+    # dataset_id, proj_id, dataset_name, datatable_name, origin_filepath, origin_filetype
+    print(project_id)
+    dataset_id_group = insert_project.select_dataset_id(project_id)
+    print('ddddd',dataset_id_group)
+    if not dataset_id_group:
+        dataset_id = 1
+    else:
+        print(dataset_id_group)
+        dataset_id = dataset_id_group[-1]["dataset_id"] + 1
+
+    print(dataset_id)
+
+
     # 创建表
-    create_data_table(my_vartypes, my_width, my_valuetypes, formats, varnames, filename)
-    writer_data(filepath, filename, valuetypes)
+    #不允许超过1024列MySQL, 超过了分表
+    nowtime = datetime.datetime.now().strftime("%Y-%m-%d")
+    if len(varnames) < 1024:
+        table_name = user_id + "_" + nowtime + "_" + filename
 
+        create_data_table(my_vartypes, my_width, my_valuetypes, formats, varnames, filename, table_name)
+        writer_data(filepath, filename, my_valuetypes)
+        print("aaa")
+        insert_project.insert_dataset(dataset_id, project_id, filename,filename, filepath, ".sav")
+    else:
+        integer, remainder = divmod(len(varnames), 800)
+        if remainder:
+            integer += 1
+        for num in range(1, integer+1):
+            table_subname = filename + "_" + num
 
-    create_information_tables(filename)
+            table_subname = user_id + "_" + nowtime + "_" + table_subname
+            insert_project.insert_dataset(dataset_id, project_id, filename, filename, filepath, ".sav")
+            start = i*800-800
+            end = i*800
+            create_data_table(my_vartypes[start:end], my_width[start:end], my_valuetypes[start:end],
+                              formats[start:end], varnames[start:end], table_subname, user_id)
+            writer_moredata(filepath, filename, my_valuetypes[start:end], start, end)
+    insert_project.close()
+    # 信息表值创建一个
+    # create_information_tables(filename)
     # 写入数据
-    insert_sub_table(filename, varnames, my_valuetypes, my_width, float_width, varLabels, valueLabels, my_vartypes)
+    insert_sub_table(filename, varnames, my_valuetypes, my_width, float_width, varLabels, valueLabels, my_vartypes, project_id, dataset_id)
 
     # if ret==2000 and ret1 == 2000:
     #     return ret

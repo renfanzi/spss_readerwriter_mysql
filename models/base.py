@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 from common.base import Config, My_Pymysql
-from common.log.loger import my_log
+from common.base import my_log
 class base_model():
     """
     #Basic usage:
@@ -29,21 +29,31 @@ class base_model():
         self.conn = My_Pymysql(**self.conf)
         self.conn.connecta()
         return self
+
     def adu_sql(self, sql):
-        # adu: add, delete, update的简写
+        # adu: insert, delete, update的简写
         try:
             self.conn.run_manysql(sql)
         except Exception as e:
             my_log.error(e)
-            return 5002
+            return
         return 2000
+
+    def insert_sql(self, sql, value):
+        # adu: insert, delete, update的简写
+        try:
+            lastrowid = self.conn.insert_sql(sql, value)
+        except Exception as e:
+            my_log.error(e)
+            return
+        return lastrowid
 
     def select_sql(self, sql):
         try:
             query_result = self.conn.select_sql(sql)
         except Exception as e:
             my_log.error(e)
-            return 5002
+            return
         return query_result
 
     def close(self):

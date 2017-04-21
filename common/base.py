@@ -8,7 +8,7 @@ import time
 import pymongo
 # import MySQLdb
 import pymysql
-from common.log.loger import my_log
+from common.log.loger import Logger
 
 class Config(object):
     def __init__(self, config_filename="cgss.conf"):
@@ -56,6 +56,11 @@ class MongoDb(object):
 
 class My_Pymysql(object):
     """
+    two method:
+
+        cursor.execute(sql, value)
+        cursor.execute(sql)
+        ------------------------------------
     Parameters:
 
         -------
@@ -71,7 +76,7 @@ class My_Pymysql(object):
 
 
     Basic usage:
-        ---------------------------------
+        -----------------------------------
         if __name__ == '__main__':
 
             ret = Config().get_content("sub_table")
@@ -82,7 +87,12 @@ class My_Pymysql(object):
             print ret.select(sql)
             ret.close()
 
-        ----------------------------------
+            ------------------------------
+            sql, value = "insert into aaa set name=%s,type=%s, width=%s, float_width=%s, varlabels=%s, valuelabels=%s", ("bb", "b", 2, 2, "bb", "b")
+            print(sql)
+            ret.connecta()
+            a = ret.insert_sql(sql, value)
+        -----------------------------------
 
     """
 
@@ -114,8 +124,18 @@ class My_Pymysql(object):
         except Exception as e:
             my_log.error(e)
             return 5002
-        my_log.info("sql执行语句成功; Sql execution statement is successful")
         return 2000
+
+    def insert_sql(self, sql, value):
+
+        try:
+            self.cursor.execute(sql, value)
+            self.conn.commit()
+        except Exception as e:
+            my_log.error(e)
+            return
+        my_log.info("insert sql 语句成功!")
+        return self.cursor.lastrowid
 
     def select_sql(self, sql, fetch="all"):
         try:
@@ -265,5 +285,21 @@ class my_datetime():
                 a_datetime = a_datetime.strftime("%Y-%m-%d")
             return a_datetime
 
+
+logpath = Config().get_content("log")["logpath"]
+if os.path.exists(logpath):
+    my_log = Logger(filename=logpath)
+else:
+    my_log = Logger()
+
 if __name__ == '__main__':
-    print(my_datetime().become_str(13693844826.0))
+    ret = Config().get_content("user_information")
+    ret = My_Pymysql(**ret)
+
+
+    sql, value = "insert INTO `%s` SET user_id=%s, proj_name=%s", ('project', 4, 'aa')
+    print(sql)
+    ret.connecta()
+    a = ret.insert_sql(sql, value)
+    print(a)
+    ret.close()

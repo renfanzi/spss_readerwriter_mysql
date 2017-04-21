@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-from controllers.upload_handler import MainHandler
+from controllers.updownload_handler import Upload, Writer_Spss_Mysql
 
 urls = [
-    (r'/index', MainHandler),
+    (r'/upload', Upload),
+    (r'/writer_spss_mysql', Writer_Spss_Mysql),
 ]

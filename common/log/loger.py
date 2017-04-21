@@ -20,7 +20,7 @@ class Logger(logging.Logger):
         super(Logger, self).__init__(self)
         # 日志文件名
         if filename is None:
-            filename = os.path.abspath("/opt/code/my_code/readerwriter_file_mysql/cgss.log")
+            filename = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "cgss.log")
         self.filename = filename
 
         # 创建一个handler，用于写入日志文件 (每天生成1个，保留30天的日志)
@@ -37,4 +37,4 @@ class Logger(logging.Logger):
         # 给logger添加handler
         self.addHandler(fh)
 
-my_log = Logger()
+
