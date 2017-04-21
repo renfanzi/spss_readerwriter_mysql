@@ -12,6 +12,7 @@ from common.base import result
 from core.spss_upload import main
 from common.base import Config
 from common.base import my_log
+from core.spss_download import spss_main
 from concurrent.futures import ThreadPoolExecutor
 from tornado.concurrent import run_on_executor
 
@@ -28,6 +29,10 @@ class Upload(RequestHandler):
         file_metas = self.request.files["file"]
         user_id = self.get_arguments("user_id")[0]
         project_name = self.get_arguments("project_name")[0]
+        if not (user_id and project_name):
+            self.write(json.dumps(result(4000, value=None), ensure_ascii=False))
+            return
+
         for meta in file_metas:
             file_name = meta['filename']
             if file_name.split(".")[-1] != "sav":
@@ -88,6 +93,41 @@ class Writer_Spss_Mysql(RequestHandler):
         self.write(json.dumps(result(2000, value={}), ensure_ascii=False))
         self.finish()
 
+
+class Download(RequestHandler):
+    executor = ThreadPoolExecutor(2)
+
+    @tornado.gen.coroutine
+    def post(self, *args, **kwargs):
+        user_id = self.get_arguments("user_id")[0]
+        project_name = self.get_arguments("project_name")[0]
+        dataset_id = self.get_arguments("dataset_id")[0]
+
+        res = yield self.sleep(user_id, project_name, dataset_id)
+
+        self.write(json.dumps(result(2000, value={"filepath": res}), ensure_ascii=False))
+        self.finish()
+
+    @run_on_executor
+    def sleep(self, user_id, project_name, dataset_id):
+        ret = requests.post('http://127.0.0.1:8001/generate_spssfile',
+                            data={"user_id": user_id,
+                                  "project_name": project_name,
+                                  "dataset_id": dataset_id})
+        return ret.text["value"]
+
+
+class Generate_SpssFile(RequestHandler):
+    executor = ThreadPoolExecutor(2)
+
+    @tornado.gen.coroutine
+    def post(self, *args, **kwargs):
+        user_id = self.get_arguments("user_id")[0]
+        project_name = self.get_arguments("project_name")[0]
+        dataset_id = self.get_arguments("dataset_id")[0]
+        filepathname = spss_main(user_id, project_name, dataset_id).genreate_spss()
+        self.write(json.dumps(result(2000, value={"filepath": filepathname}), ensure_ascii=False))
+        self.finish()
 
 if __name__ == '__main__':
     file_path = Config().get_content('filepath')['upload_path']

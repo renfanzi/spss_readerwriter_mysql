@@ -16,7 +16,7 @@
 
 
 ## 注意事项:
-    1. Python版本2.7.12, 注意对汉字对unicode的处理
+    1. Python版本2.7.12, 注意对汉字对unicode的处理, 对应Python3.5.2
     2. 在存入库的时候将unicode的字符串进行了json(类型为VARCHAR)
     3. 时间模块存库的时候是字符串,不是json
     4. 字典, key为int, value为字符串时候,进行json, key会变成float, 反解的时候不能变成int, 重点是valueLables

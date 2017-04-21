@@ -186,46 +186,52 @@ def main(filepath, filename, user_id, project_name):
     # 创建表
     # 不允许超过1024列MySQL, 超过了分表
     nowtime = datetime.datetime.now().strftime("%Y%m%d")
-    new_time3 = ""
-    new_time1 = "%.6f" % time.time()
-    new_time1 = new_time1.split(".")
-    for new_time2 in new_time1:
-        new_time3 += new_time2
+    new_time1 = "%.6f" % float(time.time())
+    new_time3 = new_time1.split(".")[0] + new_time1.split(".")[1]
 
     if len(varnames) < 1024:
         num = 1
         table_subname = "u" + str(user_id) + "_" + str(nowtime) + "_" + str(new_time3) + "_" + str(num)
-
-        create_data_table(my_vartypes, my_width, my_valuetypes, formats, varnames, table_subname)
-        writer_data(filepath, filename, my_valuetypes, table_subname)
-        insert_project.insert_dataset(dataset_id, project_id, filename, table_subname, filepath, ".sav")
-    else:
-        integer, remainder = divmod(len(varnames), 800)
-        if remainder:
-            integer += 1
-        for num in range(1, integer + 1):
-            # table_subname = filename + "_" + str(num)
-            table_subname = "u" + str(user_id) + "_" + str(nowtime) + "_" + str(new_time3) + "_" + str(num)
+        try:
+            create_data_table(my_vartypes, my_width, my_valuetypes, formats, varnames, table_subname)
+            writer_data(filepath, filename, my_valuetypes, table_subname)
             insert_project.insert_dataset(dataset_id, project_id, filename, table_subname, filepath, ".sav")
-            start = num * 800 - 800
-            end = num * 800
-            sub_formats = {}
-            for sub_for in varnames[start:end]:
-                sub_formats[sub_for] = formats[sub_for]
+        except Exception as e:
+            my_log.error(e)
+    else:
+        try:
+            integer, remainder = divmod(len(varnames), 800)
+            if remainder:
+                integer += 1
+            for num in range(1, integer + 1):
+                # table_subname = filename + "_" + str(num)
+                table_subname = "u" + str(user_id) + "_" + str(nowtime) + "_" + str(new_time3) + "_" + str(num)
+                insert_project.insert_dataset(dataset_id, project_id, filename, table_subname, filepath, ".sav")
+                start = num * 800 - 800
+                end = num * 800
+                sub_formats = {}
+                for sub_for in varnames[start:end]:
+                    sub_formats[sub_for] = formats[sub_for]
 
-            create_data_table(my_vartypes[start:end],
-                              my_width[start:end],
-                              my_valuetypes[start:end],
-                              sub_formats,  # formats
-                              varnames[start:end],
-                              table_subname)
-            writer_moredata(filepath, filename, my_valuetypes[start:end], start, end, table_subname)
+                create_data_table(my_vartypes[start:end],
+                                  my_width[start:end],
+                                  my_valuetypes[start:end],
+                                  sub_formats,  # formats
+                                  varnames[start:end],
+                                  table_subname)
+                writer_moredata(filepath, filename, my_valuetypes[start:end], start, end, table_subname)
+        except Exception as e:
+            my_log.error(e)
+
     insert_project.close()
     # 信息表值创建一个
     # create_information_tables(filename)
     # 写入数据
-    insert_sub_table(filename, varnames, my_valuetypes, my_width, float_width, varLabels, valueLabels, my_vartypes,
-                     project_id, dataset_id)
+    try:
+        insert_sub_table(filename, varnames, my_valuetypes, my_width, float_width, varLabels, valueLabels, my_vartypes,
+                         project_id, dataset_id)
+    except Exception as e:
+        my_log.error(e)
 
     # if ret==2000 and ret1 == 2000:
     #     return ret

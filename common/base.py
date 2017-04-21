@@ -11,6 +11,9 @@ import pymysql
 from common.log.loger import Logger
 
 class Config(object):
+    """
+    # Config().get_content("user_information")
+    """
     def __init__(self, config_filename="cgss.conf"):
         file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), config_filename)
         self.cf = configparser.ConfigParser()
@@ -113,9 +116,12 @@ class My_Pymysql(object):
         self.cursor = self.conn.cursor(cursor=pymysql.cursors.DictCursor)
 
     def run_sql(self, sql):
-        cursor = self.connecta()
-        cursor.execute(sql)
-        self.conn.commit()
+        try:
+            cursor = self.connecta()
+            cursor.execute(sql)
+            self.conn.commit()
+        except Exception as e:
+            my_log.error(e)
 
     def run_manysql(self, sql):
         try:
@@ -228,14 +234,14 @@ class my_datetime():
         elif isinstance(dtdt, float):
             return dtdt
 
-        elif isinstance(dtdt, unicode):
-            if dtdt.split(" ")[1:]:
-                a_datetime = datetime.datetime.strptime(dtdt, "%Y-%m-%d %H:%M:%S")
-                timestamp = time.mktime(a_datetime.timetuple())
-            else:
-                a_datetime = datetime.datetime.strptime(dtdt, "%Y-%m-%d")
-                timestamp = time.mktime(a_datetime.timetuple())
-            return timestamp
+        # elif isinstance(dtdt, unicode):
+        #     if dtdt.split(" ")[1:]:
+        #         a_datetime = datetime.datetime.strptime(dtdt, "%Y-%m-%d %H:%M:%S")
+        #         timestamp = time.mktime(a_datetime.timetuple())
+        #     else:
+        #         a_datetime = datetime.datetime.strptime(dtdt, "%Y-%m-%d")
+        #         timestamp = time.mktime(a_datetime.timetuple())
+        #     return timestamp
 
     def become_datetime(self, dtdt):
         # 将时间类型转换成datetime类型
@@ -254,12 +260,12 @@ class my_datetime():
             a_datetime = datetime.datetime.fromtimestamp(dtdt)
             return a_datetime
 
-        elif isinstance(dtdt, unicode):
-            if dtdt.split(" ")[1:]:
-                a_datetime = datetime.datetime.strptime(dtdt, "%Y-%m-%d %H:%M:%S")
-            else:
-                a_datetime = datetime.datetime.strptime(dtdt, "%Y-%m-%d")
-            return a_datetime
+        # elif isinstance(dtdt, unicode):
+        #     if dtdt.split(" ")[1:]:
+        #         a_datetime = datetime.datetime.strptime(dtdt, "%Y-%m-%d %H:%M:%S")
+        #     else:
+        #         a_datetime = datetime.datetime.strptime(dtdt, "%Y-%m-%d")
+        #     return a_datetime
 
     def become_str(self, dtdt):
         # 把时间类型转换成字符串
@@ -275,15 +281,15 @@ class my_datetime():
             a_datetime = a_datetime_local.strftime("%Y-%m-%d %H:%M:%S")
             return a_datetime
 
-        elif isinstance(dtdt, unicode):
-            # 区别：一个是strp， 一个是strf
-            if dtdt.split(" ")[1:]:
-                a_datetime = datetime.datetime.strptime(dtdt, "%Y-%m-%d %H:%M:%S")
-                a_datetime = a_datetime.strftime("%Y-%m-%d %H:%M:%S")
-            else:
-                a_datetime = datetime.datetime.strptime(dtdt, "%Y-%m-%d")
-                a_datetime = a_datetime.strftime("%Y-%m-%d")
-            return a_datetime
+        # elif isinstance(dtdt, unicode):
+        #     # 区别：一个是strp， 一个是strf
+        #     if dtdt.split(" ")[1:]:
+        #         a_datetime = datetime.datetime.strptime(dtdt, "%Y-%m-%d %H:%M:%S")
+        #         a_datetime = a_datetime.strftime("%Y-%m-%d %H:%M:%S")
+        #     else:
+        #         a_datetime = datetime.datetime.strptime(dtdt, "%Y-%m-%d")
+        #         a_datetime = a_datetime.strftime("%Y-%m-%d")
+        #     return a_datetime
 
 
 logpath = Config().get_content("log")["logpath"]

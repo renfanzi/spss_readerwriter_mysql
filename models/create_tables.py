@@ -32,7 +32,6 @@ def create_data_table(vartypes, width, valuetypes, formats, varnames, tablename,
     sql = sql + ") ENGINE=InnoDB DEFAULT CHARSET=UTF8"
 
     res = base_model(libname).connect()
-
     res.adu_sql("""DROP TABLE IF EXISTS {}""".format(tablename))
     res.adu_sql(sql)
     res.close()
@@ -45,7 +44,7 @@ class writer_data_table():
 
     def insert_sql(self, tablename, data):
         data = tuple(data)
-        sql = "insert INTO `{}` VALUES {};".format(tablename, data)
+        sql = """insert INTO `{}` VALUES {};""".format(tablename, data)
         self.res.adu_sql(sql)
 
     def close(self):
@@ -76,7 +75,7 @@ class writer_information_tables():
 
     def insert_sql(self, tablename, data):
         data = tuple(data)
-        sql = "insert INTO `data_information` VALUES {};".format(data)
+        sql = """insert INTO `data_information` VALUES {};""".format(data)
         self.res.adu_sql(sql)
 
     def close(self):
