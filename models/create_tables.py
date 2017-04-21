@@ -8,9 +8,8 @@ from common.base import my_log
 from models.base import base_model
 
 
-def create_data_table(vartypes, width, valuetypes, formats, varnames, filename, tablename, libname="data"):
+def create_data_table(vartypes, width, valuetypes, formats, varnames, tablename, libname="data"):
 
-    print("tablename is :", tablename)
     sql = """CREATE TABLE `{}` (""".format(tablename)
     for i in range(len(varnames)):
         if valuetypes[i] == "FLOAT":
@@ -21,7 +20,7 @@ def create_data_table(vartypes, width, valuetypes, formats, varnames, filename, 
         elif valuetypes[i] == "DATE":
             s = "`{}` {} DEFAULT NULL".format(varnames[i], valuetypes[i])
         elif valuetypes[i] == "VARCHAR":
-            s = "`{}` {}({}) DEFAULT NULL".format(varnames[i], valuetypes[i], str(int(width[i])+10))
+            s = "`{}` {}({}) DEFAULT NULL".format(varnames[i], valuetypes[i], width[i])
         else:
             s = "`{}` {}({}) DEFAULT NULL".format(varnames[i], valuetypes[i], width[i])
 
@@ -31,7 +30,10 @@ def create_data_table(vartypes, width, valuetypes, formats, varnames, filename, 
             sql = sql + s
 
     sql = sql + ") ENGINE=InnoDB DEFAULT CHARSET=UTF8"
+
     res = base_model(libname).connect()
+
+    res.adu_sql("""DROP TABLE IF EXISTS {}""".format(tablename))
     res.adu_sql(sql)
     res.close()
 
@@ -118,6 +120,7 @@ class insert_project_infor():
 
     def close(self):
         self.res.close()
+
 
 if __name__ == '__main__':
     ret = insert_project_infor()

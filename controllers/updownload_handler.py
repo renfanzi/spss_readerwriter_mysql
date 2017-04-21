@@ -28,9 +28,6 @@ class Upload(RequestHandler):
         file_metas = self.request.files["file"]
         user_id = self.get_arguments("user_id")[0]
         project_name = self.get_arguments("project_name")[0]
-        print(user_id)
-        print(project_name)
-        my_log.info("鲁拉鲁拉德玛西亚")
         for meta in file_metas:
             file_name = meta['filename']
             if file_name.split(".")[-1] != "sav":
@@ -70,7 +67,6 @@ class Upload(RequestHandler):
                                   "file_name": file_name,
                                   "user_id": user_id,
                                   "project_name": project_name})
-        print(ret.text)
         return ret.text
 
 

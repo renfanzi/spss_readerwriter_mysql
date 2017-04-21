@@ -4,6 +4,8 @@
 import json
 import savReaderWriter
 import os
+import datetime, time
+import uuid
 from common.base import my_log
 from models.create_tables import create_data_table, writer_data_table
 from models.create_tables import create_information_tables, writer_information_tables
@@ -67,9 +69,9 @@ def float_data(width):
 
 
 # 写入数据到数据库
-def writer_data(filepath, tablename, valuetypes):
+def writer_data(filepath, filename, valuetypes, tablename):
     res = writer_data_table()
-    with savReaderWriter.SavReader(os.path.join(filepath, tablename), ioUtf8=True) as read:
+    with savReaderWriter.SavReader(os.path.join(filepath, filename), ioUtf8=True) as read:
         # 如果不用ioutf8， 汉字十六进制\被转义，更麻烦
         try:
             for i in read:
@@ -90,10 +92,9 @@ def writer_data(filepath, tablename, valuetypes):
     res.close()
 
 
-
-def writer_moredata(filepath, tablename, valuetypes, start, end):
+def writer_moredata(filepath, filename, valuetypes, start, end, tablename):
     res = writer_data_table()
-    with savReaderWriter.SavReader(os.path.join(filepath, tablename), ioUtf8=True) as read:
+    with savReaderWriter.SavReader(os.path.join(filepath, filename), ioUtf8=True) as read:
         # 如果不用ioutf8， 汉字十六进制\被转义，更麻烦
         try:
             for i in read:
@@ -114,8 +115,10 @@ def writer_moredata(filepath, tablename, valuetypes, start, end):
             my_log.info("data write database success !!!")
     res.close()
 
+
 # 插入信息表的数据
-def insert_sub_table(filename, varnames, valuetypes, width, float_width, varLabels, valueLabels, vartypes, project_id, dataset_id):
+def insert_sub_table(filename, varnames, valuetypes, width, float_width, varLabels, valueLabels, vartypes, project_id,
+                     dataset_id):
     res = writer_information_tables()
 
     for i in range(len(varnames)):
@@ -142,7 +145,6 @@ def insert_sub_table(filename, varnames, valuetypes, width, float_width, varLabe
 
 
 def main(filepath, filename, user_id, project_name):
-
     """
     # print(formats):{'Q8': 'A400', 'Q3R6': 'F5', 'Q5R3': 'F5', }
     # print(varnames)['ID', 'StartTime', 'EndTime', 'VerNo', 'Q1R3',]
@@ -156,7 +158,6 @@ def main(filepath, filename, user_id, project_name):
 
     # filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "file", filename)
     FilePathName = os.path.join(filepath, filename)
-    print("filepath: ",FilePathName)
     # 得到文件信息
     formats, varnames, varLabels, valueLabels = read_sav(FilePathName)
     my_vartypes, my_width, my_valuetypes = get_spss_data(formats, varnames)
@@ -174,49 +175,57 @@ def main(filepath, filename, user_id, project_name):
     if not project_id:
         project_id = insert_project.insert_project(user_id, project_name)
 
-    #先查dataset的id,然后在插入
+    # 先查dataset的id,然后在插入
     # dataset_id, proj_id, dataset_name, datatable_name, origin_filepath, origin_filetype
-    print(project_id)
     dataset_id_group = insert_project.select_dataset_id(project_id)
-    print('ddddd',dataset_id_group)
     if not dataset_id_group:
         dataset_id = 1
     else:
-        print(dataset_id_group)
         dataset_id = dataset_id_group[-1]["dataset_id"] + 1
 
-    print(dataset_id)
-
-
     # 创建表
-    #不允许超过1024列MySQL, 超过了分表
-    nowtime = datetime.datetime.now().strftime("%Y-%m-%d")
-    if len(varnames) < 1024:
-        table_name = user_id + "_" + nowtime + "_" + filename
+    # 不允许超过1024列MySQL, 超过了分表
+    nowtime = datetime.datetime.now().strftime("%Y%m%d")
+    new_time3 = ""
+    new_time1 = "%.6f" % time.time()
+    new_time1 = new_time1.split(".")
+    for new_time2 in new_time1:
+        new_time3 += new_time2
 
-        create_data_table(my_vartypes, my_width, my_valuetypes, formats, varnames, filename, table_name)
-        writer_data(filepath, filename, my_valuetypes)
-        print("aaa")
-        insert_project.insert_dataset(dataset_id, project_id, filename,filename, filepath, ".sav")
+    if len(varnames) < 1024:
+        num = 1
+        table_subname = "u" + str(user_id) + "_" + str(nowtime) + "_" + str(new_time3) + "_" + str(num)
+
+        create_data_table(my_vartypes, my_width, my_valuetypes, formats, varnames, table_subname)
+        writer_data(filepath, filename, my_valuetypes, table_subname)
+        insert_project.insert_dataset(dataset_id, project_id, filename, table_subname, filepath, ".sav")
     else:
         integer, remainder = divmod(len(varnames), 800)
         if remainder:
             integer += 1
-        for num in range(1, integer+1):
-            table_subname = filename + "_" + num
+        for num in range(1, integer + 1):
+            # table_subname = filename + "_" + str(num)
+            table_subname = "u" + str(user_id) + "_" + str(nowtime) + "_" + str(new_time3) + "_" + str(num)
+            insert_project.insert_dataset(dataset_id, project_id, filename, table_subname, filepath, ".sav")
+            start = num * 800 - 800
+            end = num * 800
+            sub_formats = {}
+            for sub_for in varnames[start:end]:
+                sub_formats[sub_for] = formats[sub_for]
 
-            table_subname = user_id + "_" + nowtime + "_" + table_subname
-            insert_project.insert_dataset(dataset_id, project_id, filename, filename, filepath, ".sav")
-            start = i*800-800
-            end = i*800
-            create_data_table(my_vartypes[start:end], my_width[start:end], my_valuetypes[start:end],
-                              formats[start:end], varnames[start:end], table_subname, user_id)
-            writer_moredata(filepath, filename, my_valuetypes[start:end], start, end)
+            create_data_table(my_vartypes[start:end],
+                              my_width[start:end],
+                              my_valuetypes[start:end],
+                              sub_formats,  # formats
+                              varnames[start:end],
+                              table_subname)
+            writer_moredata(filepath, filename, my_valuetypes[start:end], start, end, table_subname)
     insert_project.close()
     # 信息表值创建一个
     # create_information_tables(filename)
     # 写入数据
-    insert_sub_table(filename, varnames, my_valuetypes, my_width, float_width, varLabels, valueLabels, my_vartypes, project_id, dataset_id)
+    insert_sub_table(filename, varnames, my_valuetypes, my_width, float_width, varLabels, valueLabels, my_vartypes,
+                     project_id, dataset_id)
 
     # if ret==2000 and ret1 == 2000:
     #     return ret
