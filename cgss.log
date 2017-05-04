@@ -18,3 +18,6 @@
 [2017-04-22 05:03:48,710] - base.py [Line:152] - [ERROR]-[thread:139912672880384]-[process:53666] - [(1054, "Unknown column 'tyoe' in 'field list'")]
 [2017-04-22 06:37:34,205] - spss_upload.py [Line:115] - [INFO]-[thread:139697312564992]-[process:54641] - [data write database success !!!]
 [2017-04-22 06:37:34,285] - spss_upload.py [Line:115] - [INFO]-[thread:139697312564992]-[process:54641] - [data write database success !!!]
+[2017-04-22 07:53:01,252] - spss_upload.py [Line:318] - [INFO]-[thread:140584020727552]-[process:55554] - [data write database success !!!]
+[2017-04-22 08:00:47,104] - spss_upload.py [Line:318] - [INFO]-[thread:140187714270976]-[process:55665] - [data write database success !!!]
+[2017-04-22 08:00:47,210] - spss_upload.py [Line:373] - [INFO]-[thread:140187714270976]-[process:55665] - [write spss data head information successful!]

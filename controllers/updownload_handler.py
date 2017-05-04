@@ -9,8 +9,9 @@ import random
 import datetime, time
 import requests
 from common.base import result
-from core.spss_upload import main
+# from core.spss_upload import main
 from common.base import Config
+from core.spss_upload import upload_spss
 from common.base import my_log
 from core.spss_download import spss_main
 from concurrent.futures import ThreadPoolExecutor
@@ -89,7 +90,8 @@ class Writer_Spss_Mysql(RequestHandler):
         user_id = self.get_arguments("user_id")[0]
         project_name = self.get_arguments("project_name")[0]
 
-        ret = main(file_path, file_name, user_id, project_name)
+        # ret = main(file_path, file_name, user_id, project_name)
+        ret = upload_spss().main(file_path, file_name, user_id, project_name)
         self.write(json.dumps(result(2000, value={}), ensure_ascii=False))
         self.finish()
 
@@ -99,6 +101,7 @@ class Download(RequestHandler):
 
     @tornado.gen.coroutine
     def post(self, *args, **kwargs):
+        # 缺失一次判断
         user_id = self.get_arguments("user_id")[0]
         project_name = self.get_arguments("project_name")[0]
         dataset_id = self.get_arguments("dataset_id")[0]
