@@ -24,7 +24,7 @@ settings = dict(
     template_path=ROOT_JOIN('views'),
     static_path=ROOT_JOIN('static'),
     # cookie_secret=Env.COOKIE_SEC,
-    default_handler_class=None
+    default_handler_class=None,
 )
 
 
@@ -33,7 +33,7 @@ application = tornado.web.Application(router, **settings)
 
 
 if __name__ == "__main__":
-    server = HTTPServer(application)
+    server = HTTPServer(application, max_buffer_size=504857600, max_body_size=504857600)
     server.bind(options.port)
     server.start(5)  # Forks multiple sub-process
     tornado.ioloop.IOLoop.current().start()

@@ -129,9 +129,7 @@ class spss_main():
                 self.varTypes[name] = int(i["formats"].split("A")[1])
             else:
                 self.varTypes[name] = 0
-
-            # varLabels[name] = json.loads(i["varlabels"])
-                self.varLabels[name] = i["varlabels"]
+            self.varLabels[name] = i["varlabels"]
             if i["valuelabels"]:
                 res2 = i["valuelabels"]
                 if res2 == "0":
@@ -185,6 +183,7 @@ class spss_main():
                 os.makedirs(user_subfilepath)
 
         savFileName= os.path.join(user_subfilepath, filename + ".sav")
+        print(self.varLabels)
         with SavWriter(savFileName=savFileName, varNames=self.varNames, varTypes=self.varTypes,
                        formats=self.formats, varLabels=self.varLabels, valueLabels=self.valueLabels,
                        ioUtf8=True, columnWidths={}) as writer:

@@ -60,9 +60,10 @@ class Upload(RequestHandler):
             # write input file --file
             with open(os.path.join(user_subfilepath, file_name), 'wb') as up:
                 up.write(meta['body'])
-
+        a = time.time()
         res = yield self.sleep(user_subfilepath, file_name, user_id, project_name)
-
+        b = time.time() - a
+        print(b)
         self.write(json.dumps(result(2000, value={}), ensure_ascii=False))
         self.finish()
 
@@ -117,7 +118,7 @@ class Download(RequestHandler):
                             data={"user_id": user_id,
                                   "project_name": project_name,
                                   "dataset_id": dataset_id})
-        return ret.text["value"]
+        return ret.text
 
 
 class Generate_SpssFile(RequestHandler):

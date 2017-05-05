@@ -125,6 +125,7 @@ class My_Pymysql(object):
 
     def run_manysql(self, sql):
         try:
+            sql = sql.replace("None", "Null")
             self.cursor.execute(sql)
             self.conn.commit()
         except Exception as e:
@@ -133,7 +134,7 @@ class My_Pymysql(object):
         return 2000
 
     def insert_sql(self, sql, value):
-
+        # 多用于insert set
         try:
             self.cursor.execute(sql, value)
             self.conn.commit()
